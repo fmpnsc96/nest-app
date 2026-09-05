@@ -1,0 +1,12 @@
+{
+  "hosting": {
+    "site": "fmpnsc-nest",
+    "public": ".",
+    "ignore": ["firebase.json", ".firebaserc", ".github/**", ".git/**", "**/.*", "node_modules/**"],
+    "headers": [
+      {"source": "/service-worker.js", "headers": [{"key": "Cache-Control", "value": "no-cache, no-store, must-revalidate"}]},
+      {"source": "/index.html", "headers": [{"key": "Cache-Control", "value": "no-cache, no-store, must-revalidate"}]},
+      {"source": "/", "headers": [{"key": "Cache-Control", "value": "no-cache, no-store, must-revalidate"}]}
+    ]
+  }
+}

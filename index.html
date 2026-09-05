@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eef1e8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12160e" media="(prefers-color-scheme: dark)">
+<title>Nest</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Karla:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root{
+    --bg:#eef1e8; --surface:#ffffff; --surface-2:#e3e9d9;
+    --ink:#242b1f; --ink-2:#5b6650; --muted:#8b9581; --border:rgba(36,43,31,.10); --border-strong:rgba(36,43,31,.18);
+    --accent:#557c4c; --accent-2:#749d68; --accent-ink:#ffffff; --accent-wash:rgba(85,124,76,.13);
+    --coral:#d9663f; --coral-wash:rgba(217,102,63,.14);
+    --blue:#3f74a3; --blue-wash:rgba(63,116,163,.14);
+    --good:#4c8a52; --critical:#c8503a;
+    --shadow-sm:0 1px 2px rgba(36,43,31,.07);
+    --shadow-md:0 10px 26px -12px rgba(36,43,31,.24);
+    --shadow-lg:0 26px 50px -18px rgba(36,43,31,.34);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12160e; --surface:#1a2015; --surface-2:#212819;
+      --ink:#edf0e5; --ink-2:#b7c0ab; --muted:#7c8873; --border:rgba(237,240,229,.09); --border-strong:rgba(237,240,229,.17);
+      --accent:#8dc17c; --accent-2:#a6d497; --accent-ink:#0e1509; --accent-wash:rgba(141,193,124,.16);
+      --coral:#ef8f68; --coral-wash:rgba(239,143,104,.16);
+      --blue:#7fb0dd; --blue-wash:rgba(127,176,221,.16);
+      --good:#7fcf7f; --critical:#f0917a;
+      --shadow-md:0 10px 26px -12px rgba(0,0,0,.55);
+      --shadow-lg:0 26px 50px -18px rgba(0,0,0,.65);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12160e; --surface:#1a2015; --surface-2:#212819;
+    --ink:#edf0e5; --ink-2:#b7c0ab; --muted:#7c8873; --border:rgba(237,240,229,.09); --border-strong:rgba(237,240,229,.17);
+    --accent:#8dc17c; --accent-2:#a6d497; --accent-ink:#0e1509; --accent-wash:rgba(141,193,124,.16);
+    --coral:#ef8f68; --coral-wash:rgba(239,143,104,.16);
+    --blue:#7fb0dd; --blue-wash:rgba(127,176,221,.16);
+    --good:#7fcf7f; --critical:#f0917a;
+    --shadow-md:0 10px 26px -12px rgba(0,0,0,.55);
+    --shadow-lg:0 26px 50px -18px rgba(0,0,0,.65);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{background:var(--bg); color:var(--ink); font-family:'Karla',system-ui,sans-serif; margin:0; -webkit-font-smoothing:antialiased; overscroll-behavior:none;}
+  button,input,select,textarea{font-family:inherit;}
+  button{cursor:pointer;}
+  .disp{font-family:'Fredoka',system-ui,sans-serif;}
+  .mono{font-family:'Space Mono',ui-monospace,monospace;}
+
+  /* ---------- auth screen ---------- */
+  #authScreen{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    padding:24px; text-align:center;
+  }
+  #authScreen .box{width:100%; max-width:340px;}
+  #authScreen .mark{width:72px; height:72px; border-radius:24px; background:var(--accent-wash); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;}
+  #authScreen .title{font-size:32px; font-weight:600;}
+  #authScreen .tag{font-size:14px; color:var(--ink-2); margin:10px 0 30px; line-height:1.55;}
+  #googleSignInBtn{width:100%; padding:14px; border-radius:14px; background:var(--ink); color:var(--bg); font-weight:700; font-size:14.5px; display:flex; align-items:center; justify-content:center; gap:9px; border:none;}
+  #authScreen .note{font-size:11.5px; color:var(--muted); margin-top:18px;}
+  #authError{color:var(--critical); font-size:12.5px; margin-top:14px; min-height:1px;}
+
+  /* ---------- app shell ---------- */
+  #appShell{position:fixed; inset:0; display:none; flex-direction:column; background:var(--bg);}
+  .n-iconbtn{border:none; background:none; color:var(--muted); display:flex; align-items:center; justify-content:center; padding:6px; margin:-6px; border-radius:10px; flex:none;}
+  .n-iconbtn:active{background:var(--surface-2);}
+
+  .n-topbar{padding:calc(10px + env(safe-area-inset-top)) 18px 10px; flex:none;}
+  .n-topbar .greet{font-family:'Fredoka',sans-serif; font-size:22px; font-weight:600; letter-spacing:-.005em; line-height:1.2;}
+  .n-topbar .date{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:3px;}
+  .n-topbar .toprow{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  .n-topbar.simple .toprow{align-items:baseline;}
+  .n-topbar.simple .t{font-family:'Fredoka',sans-serif; font-size:23px; font-weight:600;}
+  .n-topbar.simple .sub{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em;}
+  .n-topbar .right{display:flex; align-items:center; gap:12px; flex:none;}
+
+  .app-scroll{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:4px 18px calc(108px + env(safe-area-inset-bottom));}
+
+  .n-card{background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:6px 16px; box-shadow:var(--shadow-sm);}
+  .n-section-title{font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-2); margin:20px 2px 9px; display:flex; justify-content:space-between; align-items:center;}
+  .n-section-title .cnt{color:var(--muted); font-weight:600; text-transform:none; letter-spacing:0; font-family:'Space Mono',monospace; font-size:11px;}
+
+  .n-row{display:flex; align-items:center; gap:11px; padding:12px 2px; border-bottom:1px solid var(--border);}
+  .n-row:last-child{border-bottom:none;}
+  .n-check{width:24px; height:24px; border-radius:8px; border:2px solid var(--border-strong); flex:none; display:flex; align-items:center; justify-content:center; background:none;}
+  .n-check.done{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
+  .n-row .main{flex:1; min-width:0; text-align:left;}
+  .n-row .name{font-size:14.5px; font-weight:600; overflow-wrap:break-word;}
+  .n-row .name.done{color:var(--muted); text-decoration:line-through; font-weight:500;}
+  .n-row .sub{font-size:11.5px; color:var(--muted); margin-top:2px;}
+  .n-avatar{width:25px; height:25px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex:none; font-family:'Fredoka',sans-serif;}
+  .n-avatar.c0{background:var(--accent-wash); color:var(--accent);}
+  .n-avatar.c1{background:var(--blue-wash); color:var(--blue);}
+  .n-tag{display:inline-flex; align-items:center; padding:3px 10px; border-radius:100px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; flex:none;}
+  .n-dot{width:8px; height:8px; border-radius:50%; flex:none;}
+  .n-rowbtn{border:none; background:none; color:var(--muted); flex:none; padding:6px; margin:-6px; border-radius:8px;}
+  .n-rowbtn:active{background:var(--surface-2);}
+
+  .n-empty{padding:34px 10px; text-align:center; color:var(--muted); font-size:13px;}
+
+  .n-tabbar{display:flex; padding:6px 6px calc(6px + env(safe-area-inset-bottom)); gap:2px; background:var(--surface); border-top:1px solid var(--border); flex:none; position:fixed; left:0; right:0; bottom:0; z-index:20;}
+  .n-tabbtn{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 2px 4px; color:var(--muted); font-size:9.5px; font-weight:600; border:none; background:none;}
+  .n-tabbtn svg{width:22px; height:22px;}
+  .n-tabbtn.active{color:var(--accent);}
+
+  .n-fab{position:fixed; z-index:15; right:20px; bottom:calc(84px + env(safe-area-inset-bottom)); width:54px; height:54px; border-radius:18px; background:var(--accent); color:var(--accent-ink); box-shadow:var(--shadow-md); display:flex; align-items:center; justify-content:center; border:none;}
+
+  .n-quickadd-input{width:100%; padding:12px 15px; border-radius:14px; border:1.5px solid var(--border-strong); background:var(--surface); color:var(--ink); font-size:14px; font-family:'Karla',sans-serif; margin:10px 0 12px;}
+  .n-chip-row{display:flex; gap:7px; overflow-x:auto; padding-bottom:2px; margin-bottom:8px;}
+  .n-chip-row::-webkit-scrollbar{display:none;}
+  .n-chip{flex:none; padding:7px 14px; border-radius:100px; border:1px solid var(--border-strong); background:var(--surface); font-size:12px; font-weight:600; color:var(--ink-2);}
+  .n-chip.active{background:var(--ink); color:var(--bg); border-color:var(--ink);}
+
+  .n-note{background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:14px 16px; margin-bottom:11px; position:relative;}
+  .n-note.pinned{border-color:var(--coral); background:var(--coral-wash);}
+  .n-note .who{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+  .n-note .who .nm{font-size:11.5px; font-weight:700; color:var(--ink-2);}
+  .n-note .who .tm{font-size:10.5px; color:var(--muted); margin-left:auto; font-family:'Space Mono',monospace;}
+  .n-note p{margin:0; font-size:13.5px; line-height:1.5; overflow-wrap:break-word;}
+  .n-note .noteactions{display:flex; gap:4px; margin-left:6px;}
+
+  .n-date-chip{width:42px; flex:none; text-align:center; background:var(--surface-2); border-radius:12px; padding:7px 0 6px;}
+  .n-date-chip .d{font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; line-height:1;}
+  .n-date-chip .m{font-size:9px; text-transform:uppercase; color:var(--muted); letter-spacing:.04em; margin-top:2px;}
+
+  #modalRoot{position:fixed; inset:0; background:rgba(18,22,14,.5); z-index:40; display:none; align-items:flex-end;}
+  #modalRoot.open{display:flex;}
+  .modal-card{width:100%; max-width:520px; margin:0 auto; background:var(--surface); border-radius:24px 24px 0 0; padding:18px 20px calc(26px + env(safe-area-inset-bottom)); max-height:88vh; overflow-y:auto;}
+  .modal-card h2{font-family:'Fredoka',sans-serif; font-size:19px; margin:2px 0 16px;}
+  .n-field{margin-bottom:12px; text-align:left;}
+  .n-field label{display:block; font-size:11.5px; color:var(--ink-2); margin-bottom:5px; font-weight:600;}
+  .n-field input,.n-field select,.n-field textarea{width:100%; padding:11px 13px; border-radius:12px; border:1.5px solid var(--border-strong); background:var(--bg); color:var(--ink); font-size:14px; font-family:'Karla',sans-serif;}
+  .n-field textarea{resize:vertical; min-height:76px;}
+  .n-btn-primary{width:100%; padding:14px; border-radius:14px; background:var(--accent); color:var(--accent-ink); font-weight:700; font-size:14.5px; text-align:center; margin-top:8px; box-shadow:0 10px 22px -8px var(--accent-wash); border:none;}
+  .n-btn-ghost{width:100%; padding:12px; border-radius:14px; background:none; color:var(--ink-2); font-weight:600; font-size:13.5px; text-align:center; margin-top:8px; border:none;}
+  .n-check-row{display:flex; align-items:center; gap:9px; font-size:13.5px; color:var(--ink-2); font-weight:600; margin-bottom:6px;}
+
+  .loading{padding:60px 10px; text-align:center; color:var(--muted); font-size:13px;}
+</style>
+</head>
+<body>
+
+<div id="authScreen">
+  <div class="box">
+    <div class="mark"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></div>
+    <div class="disp title">Nest</div>
+    <div class="tag">One shared place for your household — just the two of you.</div>
+    <button id="googleSignInBtn">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.5-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 6.1 29.6 4 24 4 16 4 9.1 8.5 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.1-5.1l-6.5-5.5C29.6 35.4 27 36 24 36c-5.3 0-9.7-3.4-11.3-8l-6.6 5.1C9 39.5 15.9 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C41.5 36 44 30.5 44 24c0-1.4-.1-2.5-.4-3.5z"/></svg>
+      Continue with Google
+    </button>
+    <div class="note">Only invited household members can sign in</div>
+    <div id="authError"></div>
+  </div>
+</div>
+
+<div id="appShell">
+  <div class="n-topbar" id="topbar"></div>
+  <div class="app-scroll" id="view"></div>
+  <button class="n-fab" id="fab"></button>
+  <nav class="n-tabbar" id="tabbar">
+    <button class="n-tabbtn" data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg><span>Home</span></button>
+    <button class="n-tabbtn" data-tab="shopping"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="17" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></svg><span>Shopping</span></button>
+    <button class="n-tabbtn" data-tab="chores"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Chores</span></button>
+    <button class="n-tabbtn" data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M11 19V4M18 19v-6"/></svg><span>Coming up</span></button>
+    <button class="n-tabbtn" data-tab="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9L20 8v12.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M14.5 3.5V8H19M8.5 12.5h7M8.5 16h5"/></svg><span>Notes</span></button>
+  </nav>
+</div>
+
+<div id="modalRoot"><div class="modal-card" id="modalBody"></div></div>
+
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyB-GdpbVDDxPNPxthH5VcrqitErUgcQK0o",
+    // Nest's own Hosting domain (not the default *.firebaseapp.com, and not
+    // Ledger's domain) so the Google sign-in redirect stays same-origin —
+    // see Ledger's index.html for why a cross-origin authDomain breaks the
+    // redirect handoff under Chrome's storage partitioning.
+    authDomain: "fmpnsc-nest.web.app",
+    projectId: "fmpnsc-organizer",
+    storageBucket: "fmpnsc-organizer.firebasestorage.app",
+    messagingSenderId: "408215394125",
+    appId: "1:408215394125:web:a2536160ceab148eea8904"
+  };
+  try{ firebase.initializeApp(firebaseConfig); }catch(e){ console.error('Firebase init failed', e); }
+</script>
+<script>
+(function(){
+  "use strict";
+
+  // ---------- state ----------
+  const STATE = {
+    db:null, uid:null, me:null,
+    members:[], shopping:[], chores:[], events:[], notes:[],
+    unsub:[],
+  };
+  let currentTab = 'home';
+
+  const CHORE_RECUR = [['none','One-off'],['weekly','Weekly'],['biweekly','Bi-weekly'],['every3','Every 3 days'],['monthly','Monthly']];
+  const CHORE_RECUR_LABEL = Object.fromEntries(CHORE_RECUR);
+  const EVENT_RECUR = [['none','One-off'],['weekly','Weekly'],['monthly','Monthly']];
+  const EVENT_RECUR_LABEL = Object.fromEntries(EVENT_RECUR);
+  const EVENT_CATS = { bill:{label:'Bill', wash:'var(--coral-wash)', ink:'var(--coral)'}, delivery:{label:'Delivery', wash:'var(--blue-wash)', ink:'var(--blue)'}, plan:{label:'Plan', wash:'var(--surface-2)', ink:'var(--ink-2)'} };
+  const SHOP_CATS = ['Dairy','Produce','Pantry','Household','Other'];
+
+  // ---------- helpers ----------
+  function el(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function isoDate(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+  function todayISO(){ return isoDate(new Date()); }
+  function parseISODateLocal(iso){ const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); }
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const WEEKDAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  function fmtDateChip(iso){ const d=parseISODateLocal(iso); return { d:d.getDate(), m:MONTHS[d.getMonth()] }; }
+  function fmtHeaderDate(d){ return `${WEEKDAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()].toUpperCase()==MONTHS[d.getMonth()]?'':''}${['January','February','March','April','May','June','July','August','September','October','November','December'][d.getMonth()]}`.toUpperCase(); }
+  function fmtRelative(ms){
+    if(!ms) return '';
+    const now = Date.now();
+    const diff = now - ms;
+    if(diff < 60000) return 'Just now';
+    if(diff < 3600000) return `${Math.floor(diff/60000)}m ago`;
+    if(diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
+    const a = new Date(ms), b = new Date();
+    const dayDiff = Math.round((new Date(b.getFullYear(),b.getMonth(),b.getDate()) - new Date(a.getFullYear(),a.getMonth(),a.getDate()))/86400000);
+    if(dayDiff===1) return 'Yesterday';
+    if(dayDiff<7) return `${dayDiff} days ago`;
+    return `${a.getDate()} ${MONTHS[a.getMonth()]}`;
+  }
+  function initials(name){ name=(name||'?').trim(); return name ? name[0].toUpperCase() : '?'; }
+  function greeting(){ const h=new Date().getHours(); return h<12?'Good morning':(h<18?'Good afternoon':'Good evening'); }
+  function firstName(name){ return (name||'').trim().split(/\s+/)[0] || 'there'; }
+
+  function memberByUid(uid){ return STATE.members.find(m=>m.uid===uid); }
+  function avatarClass(uid){ const m=memberByUid(uid); return `c${(m&&m.colorSlot)||0}`; }
+  function memberLabel(uid){ if(uid===STATE.uid) return 'You'; const m=memberByUid(uid); return m ? firstName(m.displayName) : 'Someone'; }
+
+  // ---------- chore recurrence math ----------
+  function currentCycleStartISO(anchorISO, recurrence){
+    const anchor = parseISODateLocal(anchorISO);
+    const t = parseISODateLocal(todayISO());
+    if(recurrence==='monthly'){
+      let d = new Date(anchor);
+      while(true){
+        const next = new Date(d); next.setMonth(next.getMonth()+1);
+        if(next > t) break;
+        d = next;
+      }
+      return isoDate(d);
+    }
+    const len = { weekly:7, biweekly:14, every3:3 }[recurrence] || 7;
+    const diffDays = Math.floor((t - anchor) / 86400000);
+    const cycleIndex = Math.max(0, Math.floor(diffDays/len));
+    const start = new Date(anchor); start.setDate(start.getDate() + cycleIndex*len);
+    return isoDate(start);
+  }
+  function isChoreDone(c){
+    if(c.recurrence==='none') return !!c.done;
+    if(!c.lastDoneAt) return false;
+    const cycleStart = parseISODateLocal(currentCycleStartISO(c.anchorDate, c.recurrence)).getTime();
+    return c.lastDoneAt >= cycleStart;
+  }
+
+  // ---------- event recurrence math ----------
+  function nextOccurrenceISO(dateISO, recurrence){
+    if(recurrence==='none') return dateISO;
+    const t = parseISODateLocal(todayISO());
+    let d = parseISODateLocal(dateISO);
+    let guard = 0;
+    while(d < t && guard < 2000){
+      guard++;
+      const nd = new Date(d);
+      if(recurrence==='weekly') nd.setDate(nd.getDate()+7); else nd.setMonth(nd.getMonth()+1);
+      d = nd;
+    }
+    return isoDate(d);
+  }
+
+  // ---------- modal ----------
+  function openModal(html){
+    el('modalBody').innerHTML = html;
+    el('modalRoot').classList.add('open');
+  }
+  function closeModal(){
+    el('modalRoot').classList.remove('open');
+    el('modalBody').innerHTML = '';
+  }
+
+  // ---------- Firestore writes ----------
+  function col(name){ return STATE.db.collection(name); }
+
+  async function upsertMember(user){
+    const ref = col('householdMembers').doc(user.uid);
+    const snap = await ref.get();
+    if(!snap.exists){
+      const countSnap = await col('householdMembers').get();
+      await ref.set({
+        uid:user.uid, email:user.email||'', displayName:user.displayName||'',
+        photoURL:user.photoURL||'', colorSlot: countSnap.size % 2, createdAt: Date.now(),
+      });
+    } else {
+      await ref.set({ displayName:user.displayName||'', photoURL:user.photoURL||'', email:user.email||'' }, { merge:true });
+    }
+  }
+
+  function addShoppingItem(name, category){
+    if(!name.trim()) return;
+    col('householdShoppingItems').add({ name:name.trim(), category:category||'Other', done:false, addedBy:STATE.uid, createdAt:Date.now(), doneAt:null });
+  }
+  function toggleShoppingItem(item){
+    col('householdShoppingItems').doc(item.id).update({ done: !item.done, doneAt: !item.done ? Date.now() : null });
+  }
+  function deleteShoppingItem(id){ col('householdShoppingItems').doc(id).delete(); }
+  function clearCheckedShopping(){
+    STATE.shopping.filter(i=>i.done).forEach(i=>deleteShoppingItem(i.id));
+  }
+
+  function addChore(name, recurrence, assignedTo){
+    if(!name.trim()) return;
+    col('householdChores').add({ name:name.trim(), recurrence, assignedTo: assignedTo||'either', anchorDate: todayISO(), lastDoneAt:null, done:false, addedBy:STATE.uid, createdAt:Date.now() });
+  }
+  function toggleChore(c){
+    if(c.recurrence==='none'){ col('householdChores').doc(c.id).update({ done: !c.done }); return; }
+    const done = isChoreDone(c);
+    col('householdChores').doc(c.id).update({ lastDoneAt: done ? null : Date.now() });
+  }
+  function deleteChore(id){ col('householdChores').doc(id).delete(); }
+
+  function addEvent(title, date, time, category, recurrence, notes){
+    if(!title.trim() || !date) return;
+    col('householdEvents').add({ title:title.trim(), date, time:time||'', category, recurrence, notes:notes||'', addedBy:STATE.uid, createdAt:Date.now() });
+  }
+  function deleteEvent(id){ col('householdEvents').doc(id).delete(); }
+
+  function addNote(text){
+    if(!text.trim()) return;
+    col('householdNotes').add({ text:text.trim(), pinned:false, authorUid:STATE.uid, createdAt:Date.now() });
+  }
+  function toggleNotePin(n){ col('householdNotes').doc(n.id).update({ pinned: !n.pinned }); }
+  function deleteNote(id){ col('householdNotes').doc(id).delete(); }
+
+  // ---------- icons ----------
+  const ICON_CHECK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  const ICON_TRASH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/></svg>';
+  const ICON_PIN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M8 3h8l-1 6 3 3H7l3-3-1-6Z"/></svg>';
+  const ICON_PLUS = '<svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+  const ICON_DOOR = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h9M15 3l4 2v14l-4 2M15 3v18"/><circle cx="12" cy="12" r=".6" fill="currentColor"/></svg>';
+
+  // ---------- rendering ----------
+  function render(){
+    renderTopbar();
+    renderFab();
+    document.querySelectorAll('.n-tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===currentTab));
+    const view = el('view');
+    if(currentTab==='home') view.innerHTML = renderHome();
+    else if(currentTab==='shopping') view.innerHTML = renderShopping();
+    else if(currentTab==='chores') view.innerHTML = renderChores();
+    else if(currentTab==='events') view.innerHTML = renderEvents();
+    else if(currentTab==='notes') view.innerHTML = renderNotes();
+    wireView();
+  }
+
+  function renderTopbar(){
+    const tb = el('topbar');
+    if(currentTab==='home'){
+      tb.className = 'n-topbar';
+      tb.innerHTML = `<div class="toprow">
+        <div><div class="greet">${esc(greeting())}, ${esc(firstName(STATE.me&&STATE.me.displayName))}</div><div class="date">${esc(fmtHeaderDate(new Date()))}</div></div>
+        <button class="n-iconbtn" id="signOutBtn" title="Sign out">${ICON_DOOR}</button>
+      </div>`;
+      return;
+    }
+    const titles = { shopping:['Shopping', `${STATE.shopping.filter(i=>!i.done).length} to get`],
+      chores:['Chores', `${STATE.chores.filter(c=>!isChoreDone(c)).length} active`],
+      events:['Coming up','Next 30 days'],
+      notes:['Notes', `${STATE.notes.length} note${STATE.notes.length===1?'':'s'}`] };
+    const [t,sub] = titles[currentTab];
+    tb.className = 'n-topbar simple';
+    tb.innerHTML = `<div class="toprow">
+      <div class="t">${esc(t)}</div>
+      <div class="right"><div class="sub">${esc(sub)}</div><button class="n-iconbtn" id="signOutBtn" title="Sign out">${ICON_DOOR}</button></div>
+    </div>`;
+  }
+
+  function renderFab(){
+    const fab = el('fab');
+    const cfg = { home:null, shopping:['var(--accent)', ()=>openAddShoppingModal()], chores:['var(--coral)', ()=>openAddChoreModal()], events:['var(--blue)', ()=>openAddEventModal()], notes:['var(--accent)', ()=>openAddNoteModal()] };
+    const c = cfg[currentTab];
+    if(!c){ fab.style.display = 'none'; return; }
+    fab.style.display = 'flex';
+    fab.style.background = c[0];
+    fab.innerHTML = ICON_PLUS;
+    fab.onclick = c[1];
+  }
+
+  function renderHome(){
+    const activeChores = STATE.chores.filter(c => !isChoreDone(c) || c.recurrence==='none');
+    const doneCount = STATE.chores.filter(isChoreDone).length;
+    const choresToShow = STATE.chores.filter(c=>!isChoreDone(c)).sort((a,b)=> (a.assignedTo===STATE.uid?-1:0) - (b.assignedTo===STATE.uid?-1:0)).slice(0,4)
+      .concat(STATE.chores.filter(isChoreDone).slice(0,Math.max(0,4-STATE.chores.filter(c=>!isChoreDone(c)).length)));
+    const unchecked = STATE.shopping.filter(i=>!i.done);
+    const upcoming = eventsSorted().slice(0,3);
+    const latestNote = STATE.notes[0];
+
+    let h = '';
+    h += `<div class="n-section-title">Chores <span class="cnt">${doneCount} of ${STATE.chores.length} done</span></div>`;
+    h += choresToShow.length ? `<div class="n-card">${choresToShow.map(choreRow).join('')}</div>` : `<div class="n-card"><div class="n-empty">No chores yet — add one from the Chores tab.</div></div>`;
+
+    h += `<div class="n-section-title">Shopping list <span class="cnt">${unchecked.length} item${unchecked.length===1?'':'s'}</span></div>`;
+    h += unchecked.length ? `<div class="n-card">${unchecked.slice(0,5).map(shopRowPreview).join('')}</div>` : `<div class="n-card"><div class="n-empty">Nothing on the list right now.</div></div>`;
+
+    h += `<div class="n-section-title">Coming up</div>`;
+    h += upcoming.length ? `<div class="n-card">${upcoming.map(eventRowPreview).join('')}</div>` : `<div class="n-card"><div class="n-empty">Nothing coming up.</div></div>`;
+
+    h += `<div class="n-section-title">Latest note</div>`;
+    h += latestNote ? noteCard(latestNote) : `<div class="n-card"><div class="n-empty">No notes yet.</div></div>`;
+    return h;
+  }
+
+  function choreRow(c){
+    const done = isChoreDone(c);
+    const sub = c.recurrence==='none' ? `Added by ${esc(memberLabel(c.addedBy))}` : esc(CHORE_RECUR_LABEL[c.recurrence]||'');
+    const avatar = c.assignedTo && c.assignedTo!=='either'
+      ? `<div class="n-avatar ${avatarClass(c.assignedTo)}">${esc(initials(memberLabel(c.assignedTo)==='You'?(STATE.me&&STATE.me.displayName):((memberByUid(c.assignedTo)||{}).displayName)))}</div>`
+      : `<div class="n-avatar" style="background:var(--surface-2); color:var(--muted);">?</div>`;
+    return `<div class="n-row" data-chore="${c.id}">
+      <button class="n-check ${done?'done':''}" data-action="toggle-chore" data-id="${c.id}">${done?ICON_CHECK:''}</button>
+      <div class="main"><div class="name ${done?'done':''}">${esc(c.name)}</div><div class="sub">${sub}</div></div>
+      ${avatar}
+      <button class="n-rowbtn" data-action="delete-chore" data-id="${c.id}">${ICON_TRASH}</button>
+    </div>`;
+  }
+
+  function shopRowPreview(i){
+    return `<div class="n-row"><span class="n-dot" style="background:var(--blue);"></span><div class="main"><div class="name">${esc(i.name)}</div></div></div>`;
+  }
+
+  function eventRowPreview(ev){
+    const cat = EVENT_CATS[ev.category]||EVENT_CATS.plan;
+    return `<div class="n-row"><span class="n-tag" style="background:${cat.wash}; color:${cat.ink};">${esc(cat.label)}</span><div class="main"><div class="name">${esc(ev.title)}</div></div></div>`;
+  }
+
+  function noteCard(n){
+    const author = memberLabel(n.authorUid);
+    return `<div class="n-note ${n.pinned?'pinned':''}">
+      <div class="who"><span class="n-avatar ${avatarClass(n.authorUid)}" style="width:19px;height:19px;font-size:9.5px;">${esc(initials(author==='You'?(STATE.me&&STATE.me.displayName):((memberByUid(n.authorUid)||{}).displayName)))}</span><span class="nm">${esc(author)}${n.pinned?' · pinned':''}</span><span class="tm">${esc(fmtRelative(n.createdAt))}</span></div>
+      <p>${esc(n.text)}</p>
+    </div>`;
+  }
+
+  function renderShopping(){
+    const cats = ['All', ...Array.from(new Set(STATE.shopping.map(i=>i.category||'Other')))];
+    const filter = STATE._shopFilter || 'All';
+    const unchecked = STATE.shopping.filter(i=>!i.done && (filter==='All' || i.category===filter));
+    const checked = STATE.shopping.filter(i=>i.done);
+    let h = `<input class="n-quickadd-input" id="quickAddShop" placeholder="Add an item…">`;
+    h += `<div class="n-chip-row">${cats.map(c=>`<div class="n-chip ${c===filter?'active':''}" data-shopfilter="${esc(c)}">${esc(c)}</div>`).join('')}</div>`;
+    h += unchecked.length ? `<div class="n-card">${unchecked.map(shopRow).join('')}</div>` : `<div class="n-card"><div class="n-empty">Nothing to get${filter!=='All'?' in '+esc(filter):''}.</div></div>`;
+    if(checked.length){
+      h += `<div class="n-section-title">Checked <span class="cnt">${checked.length}</span><button class="n-rowbtn" id="clearChecked" style="margin-left:auto;">${ICON_TRASH}</button></div>`;
+      h += `<div class="n-card">${checked.map(shopRow).join('')}</div>`;
+    }
+    return h;
+  }
+  function shopRow(i){
+    return `<div class="n-row">
+      <button class="n-check ${i.done?'done':''}" data-action="toggle-shop" data-id="${i.id}">${i.done?ICON_CHECK:''}</button>
+      <div class="main"><div class="name ${i.done?'done':''}">${esc(i.name)}</div><div class="sub">${esc(i.category||'Other')}</div></div>
+      <button class="n-rowbtn" data-action="delete-shop" data-id="${i.id}">${ICON_TRASH}</button>
+    </div>`;
+  }
+
+  function renderChores(){
+    const active = STATE.chores.filter(c=>c.recurrence!=='none');
+    const oneoff = STATE.chores.filter(c=>c.recurrence==='none');
+    let h = '';
+    h += `<div class="n-section-title">Recurring</div>`;
+    h += active.length ? `<div class="n-card">${active.map(choreRow).join('')}</div>` : `<div class="n-card"><div class="n-empty">No recurring chores yet.</div></div>`;
+    h += `<div class="n-section-title">One-off</div>`;
+    h += oneoff.length ? `<div class="n-card">${oneoff.map(choreRow).join('')}</div>` : `<div class="n-card"><div class="n-empty">No one-off chores right now.</div></div>`;
+    return h;
+  }
+
+  function eventsSorted(){
+    return STATE.events
+      .map(ev => ({ ev, next: nextOccurrenceISO(ev.date, ev.recurrence) }))
+      .filter(x => x.ev.recurrence!=='none' || x.next >= todayISO())
+      .sort((a,b)=> a.next.localeCompare(b.next))
+      .map(x => Object.assign({}, x.ev, { _next: x.next }));
+  }
+  function renderEvents(){
+    const sorted = eventsSorted();
+    const cutoff = isoDate(new Date(Date.now()+7*86400000));
+    const thisWeek = sorted.filter(e=>e._next <= cutoff);
+    const later = sorted.filter(e=>e._next > cutoff);
+    let h = '';
+    h += `<div class="n-section-title">This week</div>`;
+    h += thisWeek.length ? `<div class="n-card">${thisWeek.map(eventRow).join('')}</div>` : `<div class="n-card"><div class="n-empty">Nothing this week.</div></div>`;
+    if(later.length){
+      h += `<div class="n-section-title">Later</div><div class="n-card">${later.map(eventRow).join('')}</div>`;
+    }
+    return h;
+  }
+  function eventRow(ev){
+    const chip = fmtDateChip(ev._next);
+    const cat = EVENT_CATS[ev.category]||EVENT_CATS.plan;
+    const sub = ev.recurrence!=='none' ? `Recurring · ${EVENT_RECUR_LABEL[ev.recurrence]}` : (ev.time || ev.notes || '');
+    return `<div class="n-row">
+      <div class="n-date-chip"><div class="d">${chip.d}</div><div class="m">${chip.m}</div></div>
+      <div class="main"><div class="name">${esc(ev.title)}</div><div class="sub">${esc(sub)}</div></div>
+      <span class="n-tag" style="background:${cat.wash}; color:${cat.ink};">${esc(cat.label)}</span>
+      <button class="n-rowbtn" data-action="delete-event" data-id="${ev.id}">${ICON_TRASH}</button>
+    </div>`;
+  }
+
+  function renderNotes(){
+    const sorted = [...STATE.notes].sort((a,b)=> (b.pinned-a.pinned) || (b.createdAt-a.createdAt));
+    if(!sorted.length) return `<div class="n-card"><div class="n-empty">No notes yet — leave one for each other.</div></div>`;
+    return sorted.map(n => {
+      const author = memberLabel(n.authorUid);
+      return `<div class="n-note ${n.pinned?'pinned':''}" data-note="${n.id}">
+        <div class="who">
+          <span class="n-avatar ${avatarClass(n.authorUid)}" style="width:19px;height:19px;font-size:9.5px;">${esc(initials(author==='You'?(STATE.me&&STATE.me.displayName):((memberByUid(n.authorUid)||{}).displayName)))}</span>
+          <span class="nm">${esc(author)}${n.pinned?' · pinned':''}</span>
+          <span class="tm">${esc(fmtRelative(n.createdAt))}</span>
+          <div class="noteactions">
+            <button class="n-rowbtn" data-action="pin-note" data-id="${n.id}">${ICON_PIN}</button>
+            <button class="n-rowbtn" data-action="delete-note" data-id="${n.id}">${ICON_TRASH}</button>
+          </div>
+        </div>
+        <p>${esc(n.text)}</p>
+      </div>`;
+    }).join('');
+  }
+
+  // ---------- modals ----------
+  function memberOptions(selectedValue){
+    const opts = [`<option value="either"${selectedValue==='either'?' selected':''}>Either / rotates</option>`];
+    STATE.members.forEach(m=>{
+      const label = m.uid===STATE.uid ? 'You' : firstName(m.displayName)||'Partner';
+      opts.push(`<option value="${m.uid}"${selectedValue===m.uid?' selected':''}>${esc(label)}</option>`);
+    });
+    return opts.join('');
+  }
+
+  function openAddShoppingModal(){
+    openModal(`<h2>Add an item</h2>
+      <div class="n-field"><label>Item</label><input id="mName" placeholder="e.g. Olive oil"></div>
+      <div class="n-field"><label>Category</label><select id="mCat">${SHOP_CATS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <button class="n-btn-primary" id="mSave">Add item</button>
+      <button class="n-btn-ghost" id="mCancel">Cancel</button>`);
+    el('mSave').onclick = ()=>{ addShoppingItem(el('mName').value, el('mCat').value); closeModal(); };
+    el('mCancel').onclick = closeModal;
+  }
+
+  function openAddChoreModal(){
+    openModal(`<h2>Add a chore</h2>
+      <div class="n-field"><label>What needs doing</label><input id="mName" placeholder="e.g. Clean the fridge"></div>
+      <div class="n-field"><label>Repeats</label><select id="mRecur">${CHORE_RECUR.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
+      <div class="n-field"><label>Assigned to</label><select id="mAssign">${memberOptions('either')}</select></div>
+      <button class="n-btn-primary" id="mSave">Add chore</button>
+      <button class="n-btn-ghost" id="mCancel">Cancel</button>`);
+    el('mSave').onclick = ()=>{ addChore(el('mName').value, el('mRecur').value, el('mAssign').value); closeModal(); };
+    el('mCancel').onclick = closeModal;
+  }
+
+  function openAddEventModal(){
+    openModal(`<h2>Add to coming up</h2>
+      <div class="n-field"><label>What is it</label><input id="mName" placeholder="e.g. Internet bill due"></div>
+      <div class="n-field"><label>Date</label><input id="mDate" type="date" value="${todayISO()}"></div>
+      <div class="n-field"><label>Time / notes (optional)</label><input id="mTime" placeholder="e.g. 2–6pm"></div>
+      <div class="n-field"><label>Type</label><select id="mCat"><option value="plan">Plan</option><option value="bill">Bill</option><option value="delivery">Delivery</option></select></div>
+      <div class="n-field"><label>Repeats</label><select id="mRecur">${EVENT_RECUR.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
+      <button class="n-btn-primary" id="mSave">Add</button>
+      <button class="n-btn-ghost" id="mCancel">Cancel</button>`);
+    el('mSave').onclick = ()=>{ addEvent(el('mName').value, el('mDate').value, el('mTime').value, el('mCat').value, el('mRecur').value); closeModal(); };
+    el('mCancel').onclick = closeModal;
+  }
+
+  function openAddNoteModal(){
+    openModal(`<h2>Leave a note</h2>
+      <div class="n-field"><textarea id="mText" placeholder="WiFi password, a reminder, anything…"></textarea></div>
+      <button class="n-btn-primary" id="mSave">Post note</button>
+      <button class="n-btn-ghost" id="mCancel">Cancel</button>`);
+    el('mSave').onclick = ()=>{ addNote(el('mText').value); closeModal(); };
+    el('mCancel').onclick = closeModal;
+  }
+
+  // ---------- wiring ----------
+  function wireView(){
+    const view = el('view');
+    view.onclick = (e)=>{
+      const t = e.target.closest('[data-action]');
+      if(!t) return;
+      const id = t.dataset.id;
+      const action = t.dataset.action;
+      if(action==='toggle-chore') toggleChore(STATE.chores.find(c=>c.id===id));
+      else if(action==='delete-chore') deleteChore(id);
+      else if(action==='toggle-shop') toggleShoppingItem(STATE.shopping.find(i=>i.id===id));
+      else if(action==='delete-shop') deleteShoppingItem(id);
+      else if(action==='delete-event') deleteEvent(id);
+      else if(action==='pin-note') toggleNotePin(STATE.notes.find(n=>n.id===id));
+      else if(action==='delete-note') deleteNote(id);
+    };
+    const chipRow = view.querySelector('.n-chip-row');
+    if(chipRow) chipRow.addEventListener('click', (e)=>{
+      const chip = e.target.closest('[data-shopfilter]');
+      if(!chip) return;
+      STATE._shopFilter = chip.dataset.shopfilter;
+      render();
+    });
+    const clearBtn = el('clearChecked');
+    if(clearBtn) clearBtn.onclick = clearCheckedShopping;
+    const quickAdd = el('quickAddShop');
+    if(quickAdd) quickAdd.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' && quickAdd.value.trim()){ addShoppingItem(quickAdd.value, 'Other'); quickAdd.value=''; }
+    });
+    const signOut = el('signOutBtn');
+    if(signOut) signOut.onclick = ()=> firebase.auth().signOut();
+  }
+
+  el('tabbar').addEventListener('click', (e)=>{
+    const btn = e.target.closest('.n-tabbtn');
+    if(!btn) return;
+    currentTab = btn.dataset.tab;
+    render();
+  });
+  el('modalRoot').addEventListener('click', (e)=>{ if(e.target.id==='modalRoot') closeModal(); });
+
+  function showAuthError(msg){ el('authError').textContent = msg||''; }
+
+  function wireAuthScreen(){
+    el('googleSignInBtn').addEventListener('click', async ()=>{
+      showAuthError('');
+      try{
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await firebase.auth().signInWithRedirect(provider);
+      }catch(e){ showAuthError(e.message||'Google sign-in failed.'); }
+    });
+  }
+
+  // ---------- listeners ----------
+  function attachListeners(){
+    detachListeners();
+    const specs = [
+      ['householdMembers','members'], ['householdShoppingItems','shopping'],
+      ['householdChores','chores'], ['householdEvents','events'], ['householdNotes','notes'],
+    ];
+    specs.forEach(([coll, key])=>{
+      const unsub = col(coll).onSnapshot((snap)=>{
+        STATE[key] = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+        if(key==='notes') STATE[key].sort((a,b)=>b.createdAt-a.createdAt);
+        if(key==='members') STATE.me = memberByUid(STATE.uid);
+        render();
+      }, (err)=>{
+        console.error(coll, err);
+        if(err && err.code==='permission-denied'){
+          showAuthError("This household is invite-only. If you think that's a mistake, check with whoever set this up.");
+          firebase.auth().signOut();
+        }
+      });
+      STATE.unsub.push(unsub);
+    });
+  }
+  function detachListeners(){
+    STATE.unsub.forEach(u=>{ try{u();}catch(e){} });
+    STATE.unsub = [];
+  }
+
+  // ---------- init ----------
+  function init(){
+    wireAuthScreen();
+    try{
+      firebase.auth().getRedirectResult().catch((e)=>{ showAuthError(e.message||'Google sign-in failed.'); });
+      firebase.auth().onAuthStateChanged(async (user)=>{
+        const authScreen = el('authScreen');
+        const appShell = el('appShell');
+        if(user){
+          authScreen.style.display = 'none';
+          appShell.style.display = 'flex';
+          STATE.db = firebase.firestore();
+          STATE.uid = user.uid;
+          try{ await upsertMember(user); }catch(e){ console.error('member upsert failed', e); }
+          attachListeners();
+          render();
+        } else {
+          detachListeners();
+          STATE.db = null; STATE.uid = null; STATE.me = null;
+          STATE.members=[]; STATE.shopping=[]; STATE.chores=[]; STATE.events=[]; STATE.notes=[];
+          appShell.style.display = 'none';
+          authScreen.style.display = 'flex';
+        }
+      });
+    }catch(e){ console.error('Firebase auth unavailable', e); }
+
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', ()=>{
+        navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+      });
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
