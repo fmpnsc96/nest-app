@@ -1,7 +1,8 @@
 {
   "name": "Nest",
   "short_name": "Nest",
-  "description": "A shared home for the two of you — shopping list, chores, what's coming up, and notes.",
+  "description": "Um espaço só para a vossa casa — lista de compras, tarefas, o que aí vem e notas.",
+  "lang": "pt-PT",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#eef1e8",
