@@ -298,14 +298,34 @@
   // ---------- Firestore writes ----------
   function col(name){ return STATE.db.collection(name); }
 
-  async function upsertMember(user){
+  // A household is capped at two people. household/main holds memberUids
+  // (max length 2, in join order) so Firestore rules can allow the first two
+  // Google accounts that ever sign in and reject anyone else — without us
+  // needing to know either person's email address up front.
+  async function joinHousehold(uid){
+    const ref = col('household').doc('main');
+    return STATE.db.runTransaction(async (tx)=>{
+      const snap = await tx.get(ref);
+      if(!snap.exists){
+        tx.set(ref, { memberUids:[uid], createdAt: Date.now() });
+        return { ok:true, uids:[uid] };
+      }
+      const uids = (snap.data().memberUids)||[];
+      if(uids.includes(uid)) return { ok:true, uids };
+      if(uids.length >= 2) return { ok:false, uids };
+      const next = uids.concat([uid]);
+      tx.update(ref, { memberUids: next });
+      return { ok:true, uids: next };
+    });
+  }
+
+  async function upsertMember(user, colorSlot){
     const ref = col('householdMembers').doc(user.uid);
     const snap = await ref.get();
     if(!snap.exists){
-      const countSnap = await col('householdMembers').get();
       await ref.set({
         uid:user.uid, email:user.email||'', displayName:user.displayName||'',
-        photoURL:user.photoURL||'', colorSlot: countSnap.size % 2, createdAt: Date.now(),
+        photoURL:user.photoURL||'', colorSlot, createdAt: Date.now(),
       });
     } else {
       await ref.set({ displayName:user.displayName||'', photoURL:user.photoURL||'', email:user.email||'' }, { merge:true });
@@ -686,11 +706,26 @@
         const authScreen = el('authScreen');
         const appShell = el('appShell');
         if(user){
-          authScreen.style.display = 'none';
-          appShell.style.display = 'flex';
           STATE.db = firebase.firestore();
           STATE.uid = user.uid;
-          try{ await upsertMember(user); }catch(e){ console.error('member upsert failed', e); }
+          try{
+            const joined = await joinHousehold(user.uid);
+            if(!joined.ok){
+              STATE.db = null; STATE.uid = null;
+              showAuthError('Esta casa já tem duas pessoas. Se achas que isto é um engano, fala com quem configurou a app.');
+              await firebase.auth().signOut();
+              return;
+            }
+            await upsertMember(user, joined.uids.indexOf(user.uid));
+          }catch(e){
+            console.error('household join failed', e);
+            STATE.db = null; STATE.uid = null;
+            showAuthError('Não foi possível entrar em casa. Tenta novamente.');
+            await firebase.auth().signOut();
+            return;
+          }
+          authScreen.style.display = 'none';
+          appShell.style.display = 'flex';
           attachListeners();
           render();
         } else {
